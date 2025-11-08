@@ -1,15 +1,20 @@
 package services
 
 import (
-	"net/http"
+	"task_manager/errorcodes"
 
 	"github.com/gin-gonic/gin"
 )
 
+type HealthResponse struct {
+	Success      bool                 `json:"success"`
+	ErrorCode    errorcodes.ErrorCode `json:"errorcode"`
+	ErrorMessage string               `json:"error"`
+	Data         string               `json:"data"`
+}
+
 // HealthCheck returns a simple health status
 func HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "ok",
-		"message": "pong",
-	})
+	errorcode := errorcodes.NoError
+	c.JSON(errorcode.HttpStatusCode(), HealthResponse{Success: true, ErrorCode: errorcode, ErrorMessage: errorcode.Message(), Data: "pong"})
 }
