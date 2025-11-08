@@ -34,7 +34,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-	fmt.Println("Connected to Postgres!")
+	fmt.Println("Connected to Postgres, yayy!")
 
 	// Auto-migrate all models
 	err = db.AutoMigrate(&models.User{}, &models.Project{}, &models.Task{}, &models.Comment{})
