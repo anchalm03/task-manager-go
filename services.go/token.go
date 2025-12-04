@@ -17,7 +17,9 @@ type TokenHandlerResponse struct {
 
 func TokenHandler(c *gin.Context) {
 	error := errorcodes.NoError
-	tokenString, err := middlewares.GenerateToken("user123")
+	userId := "user1"
+	role := "role1"
+	tokenString, err := middlewares.GenerateToken(userId, role)
 	if err != nil {
 		log.Println(`error: could not sign token`)
 		error = errorcodes.InternalServerError

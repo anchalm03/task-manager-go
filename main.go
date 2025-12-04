@@ -1,16 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"task_manager/models"
+	"task_manager/db"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -30,18 +27,7 @@ func main() {
 		log.Fatal("JWT_SECRET not set in .env")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-	fmt.Println("Connected to Postgres, yayy!")
-
-	// Auto-migrate all models
-	err = db.AutoMigrate(&models.User{}, &models.Project{}, &models.Task{}, &models.Comment{})
-	if err != nil {
-		log.Fatal("Failed to migrate models:", err)
-	}
-	fmt.Println("Database migration complete!")
+	db.Connect()
 
 	r := gin.Default()
 
