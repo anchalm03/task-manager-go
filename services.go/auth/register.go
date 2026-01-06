@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"task_manager/db"
 	"task_manager/errorcodes"
 	"task_manager/models"
 
@@ -42,7 +41,7 @@ func RegisterUser(c *gin.Context) {
 		Role:     "member",
 	}
 
-	if err := db.DB.Create(&user).Error; err != nil {
+	if err := models.CreateUser(&user); err != nil {
 		errorcode = errorcodes.InternalServerError
 		c.JSON(errorcode.HttpStatusCode(), RegisterResponse{Success: false, ErrorMessage: errorcode.Message(), ErrorCode: errorcode})
 		return

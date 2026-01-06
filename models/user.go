@@ -21,12 +21,12 @@ func CreateUser(user *User) error {
 }
 
 // Get user by email (for login)
-func GetUserByEmail(email string) (*User, error) {
+func GetUserByEmail(email string) (User, error) {
 	var user User
 	if err := db.DB.First(&user, "email = ?", email).Error; err != nil {
-		return nil, err
+		return User{}, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 // Get user by ID

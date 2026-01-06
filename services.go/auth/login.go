@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"task_manager/db"
 	"task_manager/errorcodes"
 	"task_manager/middlewares"
 	"task_manager/models"
@@ -34,8 +33,8 @@ func LoginUser(c *gin.Context) {
 	}
 
 	// Find user by email
-	var user models.User
-	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	user, err := models.GetUserByEmail(req.Email)
+	if err != nil {
 		errorcode = errorcodes.NotFound
 		c.JSON(errorcode.HttpStatusCode(), LoginResponse{Success: false, ErrorCode: errorcode, ErrorMessage: "user not found"})
 		return

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"task_manager/db"
+	"task_manager/services.go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -30,6 +31,9 @@ func main() {
 	db.Connect()
 
 	r := gin.Default()
+
+	// register all routes
+	services.RegisterRoutes(r)
 
 	port := os.Getenv("PORT")
 	if port == "" {
