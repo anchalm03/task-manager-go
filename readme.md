@@ -1,24 +1,91 @@
-malanianchal last chat - https://chatgpt.com/share/6910f720-ff60-800c-93ec-d9fd68ac2ec2
+# task-manager-go
 
-continue from there 
-Models implemented jwt 
+A small Task Manager API in Go (Gin + GORM + Postgres + JWT).
 
+## Setup
 
-Completed 
-1. JWT Verification middleware is implemented but not yet used
-2. Model and model methods are done
-3. Login method impl -- user is logged in password verified and JWT token is generated, and token is returned
-5. Auth abstraction for auth based APIs (for correct access)
-6. Register and Login routes are working fine. 
-7. When login is clicked you are getting a JWT token, now from here you need to impl how and where this is to be used. 
+1. Postgres running locally on `5432` with a user `taskuser` / password `taskpass` and db `taskdb`.
+2. Tables already exist (users, projects, tasks, comments) — no migrations run by the app.
+3. Copy `.env` (present in repo) and adjust if needed:
+   ```
+   DB_URL=postgres://taskuser:taskpass@localhost:5432/taskdb?sslmode=disable
+   JWT_SECRET=supersecret
+   PORT=8080
+   ```
+4. Run:
+   ```bash
+   go run .
+   ```
 
+## Auth flow
 
+- `POST /register` → create user
+- `POST /login` → returns `{ token }`
+- Send `Authorization: Bearer <token>` on every `/api/*` request
 
-Pick From :
-1. you need to make sure that token is mapped with correct user and only that user's info is shown to him, understand how this is done - this is frontend, on the backend you just need to check if there is an Auth token or not, and use JWT claims to check for roles.
-2. Now I think the one part left if writing APIs with appropriate authorization checks and deploying and then frontend.
-3. but before that let us deploy.
+JWT claims: `sub` = user id, `role`, `exp` = 24h.
 
+## Endpoints
 
-Frontend Side of Things :
-1. JWT storage decision -b whether in a cookie from backend OR in local storage.
+### Public
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/ping` | health check |
+| POST | `/register` | create user (name, email, password) |
+| POST | `/login` | returns JWT |
+
+### Authenticated (`/api/*`, Bearer token required)
+
+**User**
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/me` | caller's profile |
+
+**Projects**
+| Method | Path | Rule |
+|---|---|---|
+| POST | `/api/projects` | any user; owner = caller |
+| GET | `/api/projects` | projects owned by caller |
+| GET | `/api/projects/:id` | owner only |
+| PATCH | `/api/projects/:id` | owner only (name, description) |
+| DELETE | `/api/projects/:id` | owner only |
+
+**Tasks**
+| Method | Path | Rule |
+|---|---|---|
+| POST | `/api/projects/:id/tasks` | project owner only |
+| GET | `/api/projects/:id/tasks` | project owner only |
+| GET | `/api/me/tasks` | tasks assigned to caller |
+| PATCH | `/api/tasks/:id` | owner or assignee (only owner can reassign) |
+| DELETE | `/api/tasks/:id` | project owner only |
+
+**Comments**
+| Method | Path | Rule |
+|---|---|---|
+| POST | `/api/tasks/:id/comments` | project owner or task assignee |
+| GET | `/api/tasks/:id/comments` | project owner or task assignee |
+| DELETE | `/api/comments/:id` | comment author or project owner |
+
+## Response envelope
+
+All handlers return:
+```json
+{
+  "success": true,
+  "errorcode": 0,
+  "error": "",
+  "data": { ... }
+}
+```
+Error codes: 0 ok, 1 internal, 2 bad request, 3 unauthorized, 4 not found, 5 forbidden, 6 conflict.
+
+## Postman
+
+Import `task-manager.postman_collection.json`. Run **Auth → Login** first — it saves `{{token}}` automatically. Subsequent requests reuse `{{projectId}}`, `{{taskId}}`, `{{commentId}}` via test scripts.
+
+## What's left
+
+- Logout (stateless JWT — frontend discard, or add a blocklist)
+- CORS middleware (only needed once a frontend exists)
+- A basic frontend (Vite/React) — see old readme notes
+- Deployment

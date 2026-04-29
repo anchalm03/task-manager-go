@@ -10,6 +10,8 @@ const (
 	BadRequest          ErrorCode = 2
 	Unauthorized        ErrorCode = 3
 	NotFound            ErrorCode = 4
+	Forbidden           ErrorCode = 5
+	Conflict            ErrorCode = 6
 )
 
 func (e ErrorCode) Message() string {
@@ -19,6 +21,8 @@ func (e ErrorCode) Message() string {
 		BadRequest:          "bad request",
 		Unauthorized:        "unauthorized access",
 		NotFound:            "resource not found",
+		Forbidden:           "forbidden",
+		Conflict:            "conflict",
 	}
 	return messages[e]
 }
@@ -30,6 +34,8 @@ func (e ErrorCode) HttpStatusCode() int {
 		BadRequest:          http.StatusBadRequest,
 		Unauthorized:        http.StatusUnauthorized,
 		NotFound:            http.StatusNotFound,
+		Forbidden:           http.StatusForbidden,
+		Conflict:            http.StatusConflict,
 	}
 	return httpErrorStatus[e]
 }

@@ -28,6 +28,15 @@ func CreateComment(comment *Comment) error {
 	return db.DB.Create(comment).Error
 }
 
+// Get a comment by ID
+func GetCommentById(commentID uuid.UUID) (*Comment, error) {
+	var comment Comment
+	if err := db.DB.First(&comment, "id = ?", commentID).Error; err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
 // Delete comment
 func DeleteComment(commentID uuid.UUID) error {
 	return db.DB.Delete(&Comment{}, "id = ?", commentID).Error

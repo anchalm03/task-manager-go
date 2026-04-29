@@ -41,6 +41,15 @@ func CreateTask(task *Task) error {
 	return db.DB.Create(task).Error
 }
 
+// Get a task by ID
+func GetTaskById(taskID uuid.UUID) (*Task, error) {
+	var task Task
+	if err := db.DB.First(&task, "id = ?", taskID).Error; err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
+
 // Update task status or due date
 func UpdateTask(taskID uuid.UUID, updates map[string]interface{}) error {
 	return db.DB.Model(&Task{}).Where("id = ?", taskID).Updates(updates).Error

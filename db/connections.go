@@ -33,6 +33,4 @@ func Connect() {
 
 	// Assign to global variable so other packages can use it
 	DB = db
-
-	fmt.Println("Database migration complete!")
 }

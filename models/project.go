@@ -31,6 +31,10 @@ func CreateProject(project *Project) error {
 	return db.DB.Create(project).Error
 }
 
+func UpdateProject(projectID uuid.UUID, updates map[string]interface{}) error {
+	return db.DB.Model(&Project{}).Where("id = ?", projectID).Updates(updates).Error
+}
+
 func GetProjectById(projectID uuid.UUID) (*Project, error) {
 	var project Project
 	if err := db.DB.First(&project, "id = ?", projectID).Error; err != nil {
