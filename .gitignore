@@ -1,0 +1,14 @@
+.env
+.env.local
+*.local
+
+# Binaries
+task-manager
+task_manager
+main
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
