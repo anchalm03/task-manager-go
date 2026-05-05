@@ -75,7 +75,12 @@ type UpdateRequest struct {
 	Description *string    `json:"description"`
 	Status      *string    `json:"status"`
 	DueDate     *time.Time `json:"due_date"`
-	AssignedTo  *string    `json:"assigned_to"`
+}
+
+// AssignRequest is the body for POST /api/tasks/:id/assign.
+// A null user_id unassigns the task.
+type AssignRequest struct {
+	UserID *string `json:"user_id"`
 }
 
 // ---- helpers ----
@@ -164,6 +169,14 @@ func CreateTask(c *gin.Context) {
 			writeTask(c, errorcodes.BadRequest, "invalid assigned_to", nil)
 			return
 		}
+		if _, err := models.GetUserById(assigneeID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				writeTask(c, errorcodes.BadRequest, "assignee user does not exist", nil)
+				return
+			}
+			writeTask(c, errorcodes.InternalServerError, "", nil)
+			return
+		}
 		task.AssignedTo = &assigneeID
 	}
 
@@ -236,7 +249,7 @@ func ListMyTasks(c *gin.Context) {
 }
 
 // PATCH /api/tasks/:id — project owner OR assignee can update status/due/title/description.
-// Only the project owner can change assignee.
+// Assignment changes go through POST /api/tasks/:id/assign.
 func UpdateTask(c *gin.Context) {
 	userID, err := middlewares.GetUserID(c)
 	if err != nil {
@@ -291,25 +304,85 @@ func UpdateTask(c *gin.Context) {
 	if req.DueDate != nil {
 		updates["due_date"] = *req.DueDate
 	}
-	if req.AssignedTo != nil {
-		if !isOwner {
-			writeTask(c, errorcodes.Forbidden, "only project owner can reassign tasks", nil)
-			return
-		}
-		if *req.AssignedTo == "" {
-			updates["assigned_to"] = nil
-		} else {
-			assigneeID, err := uuid.FromString(*req.AssignedTo)
-			if err != nil {
-				writeTask(c, errorcodes.BadRequest, "invalid assigned_to", nil)
-				return
-			}
-			updates["assigned_to"] = assigneeID
-		}
-	}
 	if len(updates) == 0 {
 		writeTask(c, errorcodes.BadRequest, "no fields to update", nil)
 		return
+	}
+
+	if err := models.UpdateTask(taskID, updates); err != nil {
+		writeTask(c, errorcodes.InternalServerError, "", nil)
+		return
+	}
+
+	updated, err := models.GetTaskById(taskID)
+	if err != nil {
+		writeTask(c, errorcodes.InternalServerError, "", nil)
+		return
+	}
+	view := toView(updated)
+	writeTask(c, errorcodes.NoError, "", &view)
+}
+
+// POST /api/tasks/:id/assign — only the project owner can assign/unassign.
+// Body: { "user_id": "<uuid>" }  → assign to that user
+// Body: { "user_id": null }      → unassign
+func AssignTask(c *gin.Context) {
+	userID, err := middlewares.GetUserID(c)
+	if err != nil {
+		writeTask(c, errorcodes.Unauthorized, "", nil)
+		return
+	}
+
+	taskID, err := uuid.FromString(c.Param("id"))
+	if err != nil {
+		writeTask(c, errorcodes.BadRequest, "invalid task id", nil)
+		return
+	}
+
+	task, err := models.GetTaskById(taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeTask(c, errorcodes.NotFound, "", nil)
+			return
+		}
+		writeTask(c, errorcodes.InternalServerError, "", nil)
+		return
+	}
+
+	project, err := models.GetProjectById(task.ProjectID)
+	if err != nil {
+		writeTask(c, errorcodes.InternalServerError, "", nil)
+		return
+	}
+	if project.OwnerID == nil || *project.OwnerID != userID {
+		writeTask(c, errorcodes.Forbidden, "only project owner can assign tasks", nil)
+		return
+	}
+
+	var req AssignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeTask(c, errorcodes.BadRequest, "", nil)
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.UserID == nil {
+		updates["assigned_to"] = nil
+	} else {
+		assigneeID, err := uuid.FromString(*req.UserID)
+		if err != nil {
+			writeTask(c, errorcodes.BadRequest, "invalid user_id", nil)
+			return
+		}
+		if _, err := models.GetUserById(assigneeID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				writeTask(c, errorcodes.BadRequest, "assignee user does not exist", nil)
+				return
+			}
+			writeTask(c, errorcodes.InternalServerError, "", nil)
+			return
+		}
+		updates["assigned_to"] = assigneeID
 	}
 
 	if err := models.UpdateTask(taskID, updates); err != nil {

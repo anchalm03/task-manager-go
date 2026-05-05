@@ -34,6 +34,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 		authentication.GET("/me/tasks", tasks.ListMyTasks)
 		authentication.PATCH("/tasks/:id", tasks.UpdateTask)
+		authentication.POST("/tasks/:id/assign", tasks.AssignTask)
 		authentication.DELETE("/tasks/:id", tasks.DeleteTask)
 
 		authentication.POST("/tasks/:id/comments", comments.CreateComment)
