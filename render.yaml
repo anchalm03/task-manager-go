@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: task-manager-go
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /ping
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+*.md
+readme.md
+.postman
+postman
+Dockerfile
+.dockerignore

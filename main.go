@@ -3,10 +3,13 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
+	"time"
 
 	"task_manager/db"
 	"task_manager/services.go"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -31,6 +34,20 @@ func main() {
 	db.Connect()
 
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOriginFunc: func(origin string) bool {
+			if strings.HasPrefix(origin, "http://localhost:") {
+				return true
+			}
+			return strings.HasSuffix(origin, ".preview.emergentagent.com")
+		},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// register all routes
 	services.RegisterRoutes(r)
